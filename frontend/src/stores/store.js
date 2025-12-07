@@ -9,6 +9,7 @@ export const useCounterStore = defineStore('counter', {
     _location: null,
     _forecast: [],
     _news: [],
+    _events: [],
   }),
   getters: {
     pictures: (state) => state._pictures,
@@ -16,6 +17,7 @@ export const useCounterStore = defineStore('counter', {
     location: (state) => state._location,
     forecast: (state) => state._forecast,
     news: (state) => state._news,
+    events: (state) => state._events,
   },
   actions: {
     async getWeather() {
@@ -63,6 +65,17 @@ export const useCounterStore = defineStore('counter', {
         })
         .catch((error) => {
           console.error(error)
+        })
+    },
+    async getCalendar() {
+      api
+        .get('/calendar')
+        .then((response) => {
+          console.log('Calendar events:', response.data)
+          this._events = response.data.events || []
+        })
+        .catch((error) => {
+          console.error('Calendar error:', error)
         })
     },
   },

@@ -31,6 +31,7 @@
       </div>
 
       <div class="events-list">
+        <div v-if="upcomingEvents.length === 0" class="no-events">No upcoming events</div>
         <div
           v-for="event in upcomingEvents"
           :key="event.id"
@@ -41,7 +42,7 @@
           <div class="event-time">{{ event.time }}</div>
           <div class="event-details">
             <div class="event-title">{{ event.title }}</div>
-            <div class="event-meta">{{ event.location }}</div>
+            <div v-if="event.location" class="event-meta">{{ event.location }}</div>
           </div>
         </div>
       </div>
@@ -50,13 +51,18 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed } from 'vue'
+import { defineComponent, computed } from 'vue'
+import { useCounterStore } from 'src/stores/store'
 
 export default defineComponent({
   name: 'CalendarWidget',
 
   setup() {
+    const store = useCounterStore()
     const today = new Date()
+
+    // Color palette for events
+    const eventColors = ['#60a5fa', '#4ade80', '#f472b6', '#a78bfa', '#fb923c', '#22d3ee']
 
     const monthYear = computed(() => {
       return today.toLocaleDateString('en-US', {
@@ -64,6 +70,22 @@ export default defineComponent({
         year: 'numeric',
       })
     })
+
+    // Get events from store
+    const storeEvents = computed(() => store.events || [])
+
+    // Check if a date has events
+    const dateHasEvent = (date) => {
+      return storeEvents.value.some((event) => {
+        if (!event.start) return false
+        const eventDate = new Date(event.start)
+        return (
+          eventDate.getDate() === date.getDate() &&
+          eventDate.getMonth() === date.getMonth() &&
+          eventDate.getFullYear() === date.getFullYear()
+        )
+      })
+    }
 
     const weekDays = computed(() => {
       const days = []
@@ -87,7 +109,7 @@ export default defineComponent({
           name: dayNames[i],
           date: date.getDate(),
           isToday,
-          hasEvent: [1, 3, 5].includes(i), // Mock: events on Mon, Wed, Fri
+          hasEvent: dateHasEvent(date),
           fullDate: date,
         })
       }
@@ -95,29 +117,34 @@ export default defineComponent({
       return days
     })
 
-    const upcomingEvents = ref([
-      {
-        id: 1,
-        title: 'Team Standup',
-        time: '9:00 AM',
-        location: 'Zoom Meeting',
-        color: '#60a5fa',
-      },
-      {
-        id: 2,
-        title: 'Lunch with Sarah',
-        time: '12:30 PM',
-        location: 'Cafe Milano',
-        color: '#4ade80',
-      },
-      {
-        id: 3,
-        title: 'Doctor Appointment',
-        time: '3:00 PM',
-        location: 'Medical Center',
-        color: '#f472b6',
-      },
-    ])
+    // Transform store events into display format
+    const upcomingEvents = computed(() => {
+      const now = new Date()
+
+      return storeEvents.value
+        .filter((event) => {
+          if (!event.start) return false
+          const eventDate = new Date(event.start)
+          return eventDate >= now
+        })
+        .slice(0, 5) // Show max 5 upcoming events
+        .map((event, index) => {
+          const startDate = new Date(event.start)
+          const timeStr = startDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          })
+
+          return {
+            id: event.id || index,
+            title: event.title || 'Untitled Event',
+            time: timeStr,
+            location: event.location || '',
+            color: eventColors[index % eventColors.length],
+          }
+        })
+    })
 
     const selectDate = (day) => {
       console.log('Selected:', day.fullDate)
@@ -253,6 +280,14 @@ export default defineComponent({
   flex-direction: column;
   gap: 6px;
   overflow-y: auto;
+}
+
+.no-events {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px;
+  opacity: 0.6;
 }
 
 .event-item {

@@ -1,4 +1,7 @@
 import { serve, S3Client } from "bun";
+import { createDAVClient } from "tsdav";
+const ical = require("node-ical");
+
 const PORT = 6989;
 const client = new S3Client({
   accessKeyId: process.env.MINIO_ROOT_USER,
@@ -6,12 +9,52 @@ const client = new S3Client({
   bucket: "bran-bucket",
   endpoint: process.env.MINIO_ENDPOINT,
 });
+const caldavClient = await createDAVClient({
+  serverUrl: process.env.CALDAV_URL || "http://radicale:5232",
+  credentials: {
+    username: process.env.CALDAV_USER || "admin",
+    password: process.env.CALDAV_PASS || "",
+  },
+  authMethod: "Basic",
+  defaultAccountType: "caldav",
+});
+const calendars = await caldavClient.fetchCalendars();
+const myCalendar = calendars[0];
+
 const weather_api = process.env.WEATHER_API_KEY;
 const news_api = process.env.NEWS_API_KEY;
 
 function postProcessResponse(response: Response) {
   response.headers.set("Access-Control-Allow-Origin", "*");
   return response;
+}
+
+function generateUID(): string {
+  // Simple UID generation using current time and random number
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+}
+
+function createIcalEvent(
+  summary: string,
+  start: Date,
+  end: Date,
+  uid: string
+): string {
+  // CalDAV requires dates to be in UTC (Z) and compressed format (YYYYMMDDTHHMMSS)
+  const formatTime = (date: Date) =>
+    date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+  return `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//TSDAV Insert Event//EN
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${formatTime(new Date())}
+DTSTART:${formatTime(start)}
+DTEND:${formatTime(end)}
+SUMMARY:${summary}
+END:VEVENT
+END:VCALENDAR`;
 }
 
 serve({
@@ -40,6 +83,60 @@ serve({
       );
       const data = await response.json();
       return postProcessResponse(new Response(JSON.stringify(data)));
+    }
+
+    if (path === "/calendar" && method === "GET") {
+      if (myCalendar == null)
+        return postProcessResponse(new Response("No calendar found"));
+      const now = new Date();
+      const oneYearFromNow = new Date(
+        now.getTime() + 365 * 24 * 60 * 60 * 1000
+      );
+      const calendarObjects = await caldavClient.fetchCalendarObjects({
+        calendar: myCalendar,
+        timeRange: {
+          start: now.toISOString(),
+          end: oneYearFromNow.toISOString(),
+        },
+      });
+      const parsedEvents = calendarObjects.map((event) => {
+        return Object.values(ical.parseICS(event.data)).find(
+          (value: any) => value.type === "VEVENT"
+        );
+      });
+      return postProcessResponse(new Response(JSON.stringify(parsedEvents)));
+    }
+
+    if (req.method === "POST" && path === "/events") {
+      if (myCalendar == null)
+        return postProcessResponse(new Response("No calendar found"));
+      try {
+        // --- 1. Define Event Details ---
+        const uid = generateUID();
+        const summary = "TSDAV-Created Test Appointment";
+        const start = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // Start 2 days from now
+        const end = new Date(start.getTime() + 60 * 60 * 1000); // 1-hour duration
+
+        // --- 2. Construct iCalendar String ---
+        const icalString = createIcalEvent(summary, start, end, uid);
+
+        // --- 3. Define Filename ---
+        // The filename must be unique and end with .ics. Using the UID is standard.
+        const eventFilename = `${uid}.ics`;
+
+        // --- 4. Call the TSDAV Method ---
+        await caldavClient.createCalendarObject({
+          calendar: myCalendar,
+          filename: eventFilename,
+          iCalString: icalString,
+        });
+
+        console.log(`✅ Successfully inserted new event: "${summary}"`);
+        console.log(`Filename: ${eventFilename}`);
+        return postProcessResponse(new Response("Event created successfully"));
+      } catch (error) {
+        console.error("❌ Failed to insert event into CalDAV server:", error);
+      }
     }
 
     if (path === "/upload" && method === "POST") {

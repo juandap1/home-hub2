@@ -18,6 +18,7 @@ export default defineComponent({
     this.store.getWeather()
     this.store.getPictures()
     this.store.getNews()
+    this.store.getCalendar()
   },
 })
 </script>

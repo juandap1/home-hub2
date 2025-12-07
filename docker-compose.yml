@@ -23,6 +23,9 @@ services:
       WEATHER_API_KEY: ${WEATHER_API_KEY}
       NEWS_API_KEY: ${NEWS_API_KEY}
       LOGO_API_KEY: ${LOGO_API_KEY}
+      CALDAV_URL: http://radicale:5232
+      CALDAV_USER: ${CALDAV_USER}
+      CALDAV_PASS: ${CALDAV_PASS}
     volumes:
       - ./backend:/app
     tty: true
