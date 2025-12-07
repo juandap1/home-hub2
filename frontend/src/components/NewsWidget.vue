@@ -4,7 +4,8 @@
     <div class="news-preview">{{ cleanPreview(currentArticle?.content) }}</div>
     <div class="news-source">
       <q-icon :name="articleLogo" />
-      <span> | {{ currentArticle?.source.name }}</span>
+      <span>{{ currentArticle?.source.name }}</span>
+      <span class="news-time">{{ formatTimeAgo(currentArticle?.publishedAt) }}</span>
     </div>
   </div>
 </template>
@@ -47,6 +48,22 @@ export default defineComponent({
       return title.replace(regex, '').trim()
     }
 
+    const formatTimeAgo = (dateString) => {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      const now = new Date()
+      const diffMs = now - date
+      const diffMins = Math.floor(diffMs / 60000)
+      const diffHours = Math.floor(diffMins / 60)
+      const diffDays = Math.floor(diffHours / 24)
+
+      if (diffMins < 1) return 'just now'
+      if (diffMins < 60) return `${diffMins}m ago`
+      if (diffHours < 24) return `${diffHours}h ago`
+      if (diffDays < 7) return `${diffDays}d ago`
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    }
+
     return {
       articles,
       currentArticle,
@@ -54,6 +71,7 @@ export default defineComponent({
       articleLogo,
       cleanPreview,
       cleanTitle,
+      formatTimeAgo,
     }
   },
 })
@@ -86,12 +104,16 @@ export default defineComponent({
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--text-secondary);
 
   .q-icon {
-    font-size: 20px;
+    font-size: 18px;
   }
+}
+
+.news-time {
+  margin-left: auto;
 }
 </style>

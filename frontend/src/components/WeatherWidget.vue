@@ -142,6 +142,8 @@ export default defineComponent({
   width: 40px;
   height: 40px;
   font-size: 40px;
+  transform: scale(1.2);
+  transform-origin: center;
 }
 
 .main-temp {
@@ -242,6 +244,8 @@ export default defineComponent({
   width: 22px;
   height: 22px;
   font-size: 22px;
+  transform: scale(2);
+  transform-origin: center;
 }
 
 .forecast-temps {
