@@ -1,31 +1,9 @@
 <template>
-  <div class="news-widget glass-card">
+  <div class="news-widget">
     <div class="news-header">
       <q-icon name="newspaper" />
-      <span>Headlines</span>
+      <span> | CNN</span>
     </div>
-
-    <div class="news-list">
-      <div
-        v-for="article in articles"
-        :key="article.id"
-        class="news-item"
-        :style="{ '--category-color': article.categoryColor }"
-        @click="openArticle(article)"
-      >
-        <div class="news-category">{{ article.category }}</div>
-        <div class="news-title">{{ article.title }}</div>
-        <div class="news-meta">
-          <span class="news-source">{{ article.source }}</span>
-          <span class="news-time">{{ article.timeAgo }}</span>
-        </div>
-      </div>
-    </div>
-
-    <button class="refresh-btn" @click="refreshNews">
-      <q-icon name="refresh" />
-      <span>Refresh</span>
-    </button>
   </div>
 </template>
 
@@ -110,6 +88,7 @@ export default defineComponent({
   gap: 12px;
   overflow: hidden;
   box-sizing: border-box;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .news-header {
@@ -121,7 +100,6 @@ export default defineComponent({
 
   .q-icon {
     font-size: 20px;
-    color: var(--accent-orange);
   }
 }
 

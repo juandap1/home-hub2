@@ -17,6 +17,7 @@
     <div class="hub-content">
       <!-- Left Side: Time, Date, Weather (Bottom) -->
       <div class="left-panel">
+        <news-widget />
         <div class="left-spacer" />
         <div class="left-info">
           <div class="time-display">{{ currentTime }}</div>
@@ -29,9 +30,6 @@
         <weather-widget />
         <div class="widget-calendar">
           <CalendarWidget />
-        </div>
-        <div class="widget-news">
-          <NewsWidget />
         </div>
       </div>
     </div>
@@ -97,11 +95,13 @@ export default defineComponent({
     const updateTime = () => {
       const now = new Date()
 
-      currentTime.value = now.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      })
+      currentTime.value = now
+        .toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        })
+        .replace(/AM|PM/, '')
 
       currentDate.value = now.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -193,7 +193,7 @@ export default defineComponent({
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   min-width: 0;
 }
 
@@ -206,7 +206,7 @@ export default defineComponent({
 }
 
 .time-display {
-  font-size: 96px;
+  font-size: 128px;
   font-weight: 200;
   line-height: 1;
   letter-spacing: -4px;
@@ -214,7 +214,7 @@ export default defineComponent({
 }
 
 .date-display {
-  font-size: 28px;
+  font-size: 42px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.9);
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
@@ -236,7 +236,6 @@ export default defineComponent({
 .widget-news {
   flex: 1;
   min-height: 0;
-  max-height: 50%;
   overflow: hidden;
   animation: slideIn 0.6s ease forwards;
 }
