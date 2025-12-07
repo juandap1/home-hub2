@@ -103,11 +103,13 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .news-widget {
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 16px;
+  gap: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .news-header {

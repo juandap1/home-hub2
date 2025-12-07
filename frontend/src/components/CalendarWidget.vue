@@ -1,31 +1,25 @@
 <template>
   <div class="calendar-widget glass-card">
     <div class="calendar-header">
-      <button class="nav-btn" @click="prevMonth">
-        <q-icon name="chevron_left" />
-      </button>
+      <div class="header-left">
+        <q-icon name="event" class="header-icon" />
+        <span class="header-title">This Week</span>
+      </div>
       <span class="month-year">{{ monthYear }}</span>
-      <button class="nav-btn" @click="nextMonth">
-        <q-icon name="chevron_right" />
-      </button>
     </div>
 
-    <div class="calendar-grid">
-      <div class="day-header" v-for="day in weekDays" :key="day">
-        {{ day }}
-      </div>
-
+    <div class="week-strip">
       <div
-        v-for="(day, index) in calendarDays"
-        :key="index"
-        class="calendar-day"
+        v-for="day in weekDays"
+        :key="day.dayIndex"
+        class="week-day"
         :class="{
-          'other-month': !day.currentMonth,
           today: day.isToday,
           'has-event': day.hasEvent,
         }"
         @click="selectDate(day)"
       >
+        <span class="day-name">{{ day.name }}</span>
         <span class="day-number">{{ day.date }}</span>
         <span v-if="day.hasEvent" class="event-dot" />
       </div>
@@ -33,7 +27,6 @@
 
     <div class="events-section">
       <div class="events-header">
-        <q-icon name="event" />
         <span>Upcoming</span>
       </div>
 
@@ -63,62 +56,39 @@ export default defineComponent({
   name: 'CalendarWidget',
 
   setup() {
-    const currentDate = ref(new Date())
-    const selectedDate = ref(new Date())
-
-    const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+    const today = new Date()
 
     const monthYear = computed(() => {
-      return currentDate.value.toLocaleDateString('en-US', {
+      return today.toLocaleDateString('en-US', {
         month: 'long',
         year: 'numeric',
       })
     })
 
-    const calendarDays = computed(() => {
-      const year = currentDate.value.getFullYear()
-      const month = currentDate.value.getMonth()
-
-      const firstDay = new Date(year, month, 1)
-      const lastDay = new Date(year, month + 1, 0)
-
+    const weekDays = computed(() => {
       const days = []
-      const today = new Date()
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-      // Days from previous month
-      const startDayOfWeek = firstDay.getDay()
-      const prevMonthLastDay = new Date(year, month, 0).getDate()
+      // Get the start of the current week (Sunday)
+      const startOfWeek = new Date(today)
+      startOfWeek.setDate(today.getDate() - today.getDay())
 
-      for (let i = startDayOfWeek - 1; i >= 0; i--) {
-        days.push({
-          date: prevMonthLastDay - i,
-          currentMonth: false,
-          isToday: false,
-          hasEvent: false,
-        })
-      }
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek)
+        date.setDate(startOfWeek.getDate() + i)
 
-      // Days of current month
-      for (let i = 1; i <= lastDay.getDate(); i++) {
         const isToday =
-          i === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+          date.getDate() === today.getDate() &&
+          date.getMonth() === today.getMonth() &&
+          date.getFullYear() === today.getFullYear()
 
         days.push({
-          date: i,
-          currentMonth: true,
+          dayIndex: i,
+          name: dayNames[i],
+          date: date.getDate(),
           isToday,
-          hasEvent: [7, 12, 15, 22, 25].includes(i), // Mock events
-        })
-      }
-
-      // Days from next month
-      const remainingDays = 42 - days.length
-      for (let i = 1; i <= remainingDays; i++) {
-        days.push({
-          date: i,
-          currentMonth: false,
-          isToday: false,
-          hasEvent: false,
+          hasEvent: [1, 3, 5].includes(i), // Mock: events on Mon, Wed, Fri
+          fullDate: date,
         })
       }
 
@@ -149,30 +119,8 @@ export default defineComponent({
       },
     ])
 
-    const prevMonth = () => {
-      currentDate.value = new Date(
-        currentDate.value.getFullYear(),
-        currentDate.value.getMonth() - 1,
-        1,
-      )
-    }
-
-    const nextMonth = () => {
-      currentDate.value = new Date(
-        currentDate.value.getFullYear(),
-        currentDate.value.getMonth() + 1,
-        1,
-      )
-    }
-
     const selectDate = (day) => {
-      if (day.currentMonth) {
-        selectedDate.value = new Date(
-          currentDate.value.getFullYear(),
-          currentDate.value.getMonth(),
-          day.date,
-        )
-      }
+      console.log('Selected:', day.fullDate)
     }
 
     const viewEvent = (event) => {
@@ -180,12 +128,9 @@ export default defineComponent({
     }
 
     return {
-      weekDays,
       monthYear,
-      calendarDays,
+      weekDays,
       upcomingEvents,
-      prevMonth,
-      nextMonth,
       selectDate,
       viewEvent,
     }
@@ -195,11 +140,13 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .calendar-widget {
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 16px;
+  gap: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .calendar-header {
@@ -208,80 +155,55 @@ export default defineComponent({
   justify-content: space-between;
 }
 
-.month-year {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.nav-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
+.header-left {
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-  }
-
-  &:active {
-    transform: scale(0.9);
-  }
+  gap: 8px;
 }
 
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+.header-icon {
+  font-size: 18px;
+  color: var(--accent-purple);
 }
 
-.day-header {
-  text-align: center;
-  font-size: 10px;
+.header-title {
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-muted);
-  padding: 8px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.calendar-day {
-  aspect-ratio: 1;
+.month-year {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.week-strip {
+  display: flex;
+  gap: 4px;
+}
+
+.week-day {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  border-radius: 8px;
+  padding: 10px 4px;
+  border-radius: 10px;
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
-  gap: 2px;
+  gap: 4px;
 
-  &:hover:not(.other-month) {
+  &:hover:not(.today) {
     background: rgba(255, 255, 255, 0.1);
   }
 
   &:active {
-    transform: scale(0.9);
-  }
-
-  &.other-month {
-    .day-number {
-      color: var(--text-muted);
-      opacity: 0.4;
-    }
+    transform: scale(0.95);
   }
 
   &.today {
     background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-    box-shadow: 0 0 20px rgba(96, 165, 250, 0.4);
+    box-shadow: 0 0 16px rgba(96, 165, 250, 0.4);
 
     .day-number {
       font-weight: 700;
@@ -289,14 +211,22 @@ export default defineComponent({
   }
 }
 
-.day-number {
-  font-size: 12px;
+.day-name {
+  font-size: 10px;
   font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.day-number {
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .event-dot {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--accent-pink);
 }
@@ -305,38 +235,32 @@ export default defineComponent({
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
 }
 
 .events-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-secondary);
-
-  .q-icon {
-    font-size: 18px;
-    color: var(--accent-purple);
-  }
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .events-list {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow-y: auto;
 }
 
 .event-item {
   display: flex;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   border-left: 3px solid var(--event-color);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -352,10 +276,11 @@ export default defineComponent({
 }
 
 .event-time {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
+  min-width: 55px;
 }
 
 .event-details {
@@ -364,7 +289,7 @@ export default defineComponent({
 }
 
 .event-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -372,7 +297,7 @@ export default defineComponent({
 }
 
 .event-meta {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
