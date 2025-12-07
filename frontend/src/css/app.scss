@@ -8,7 +8,7 @@
   --bg-gradient-mid: #302b63;
   --bg-gradient-end: #24243e;
 
-  --glass-bg: rgba(59, 59, 59, 0.2);
+  --glass-bg: rgba(59, 59, 59, 0.3);
   --glass-border: rgba(255, 255, 255, 0.1);
 
   --text-primary: #ffffff;
@@ -63,14 +63,14 @@ body {
 .glass-card {
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   transition: all 0.3s ease;
-
-  // &:hover {
-  //   background: rgba(255, 255, 255, 0.08);
-  //   border-color: rgba(255, 255, 255, 0.15);
-  // }
+  // Ensure proper stacking context for backdrop-filter
+  isolation: isolate;
+  transform: translateZ(0);
+  will-change: backdrop-filter;
 }
 
 // Touch-friendly button

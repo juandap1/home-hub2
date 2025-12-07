@@ -4,8 +4,19 @@
 
 <script>
 import { defineComponent } from 'vue'
+import { useCounterStore } from './stores/store'
 
 export default defineComponent({
   name: 'App',
+  setup() {
+    const store = useCounterStore()
+    return {
+      store,
+    }
+  },
+  mounted() {
+    this.store.getWeather()
+    this.store.getPictures()
+  },
 })
 </script>

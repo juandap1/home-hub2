@@ -3,12 +3,7 @@
     <!-- Background Photo Slideshow -->
     <div class="photo-background">
       <transition name="fade" mode="out-in">
-        <img
-          :key="currentPhotoIndex"
-          :src="photos[currentPhotoIndex].url"
-          :alt="photos[currentPhotoIndex].caption"
-          class="background-photo"
-        />
+        <img :key="currentPhotoIndex" :src="photos[currentPhotoIndex]" class="background-photo" />
       </transition>
       <div class="photo-overlay" />
     </div>
@@ -27,7 +22,9 @@
 
       <!-- Right Side: Widgets -->
       <div class="right-panel">
-        <weather-widget />
+        <div class="widget-weather">
+          <weather-widget />
+        </div>
         <div class="widget-calendar">
           <CalendarWidget />
         </div>
@@ -48,10 +45,11 @@
 </template>
 
 <script>
-import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
+import { defineComponent, ref, onMounted, onUnmounted, computed } from 'vue'
 import CalendarWidget from 'src/components/CalendarWidget.vue'
 import NewsWidget from 'src/components/NewsWidget.vue'
 import WeatherWidget from 'src/components/WeatherWidget.vue'
+import { useCounterStore } from 'src/stores/store'
 
 export default defineComponent({
   name: 'IndexPage',
@@ -68,29 +66,9 @@ export default defineComponent({
     const currentPhotoIndex = ref(0)
     let timeInterval = null
     let photoInterval = null
+    const store = useCounterStore()
 
-    const photos = ref([
-      {
-        url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop',
-        caption: 'Mountain Adventure',
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1920&h=1080&fit=crop',
-        caption: 'Ocean Sunset',
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&h=1080&fit=crop',
-        caption: 'Forest Path',
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1920&h=1080&fit=crop',
-        caption: 'Lake Reflection',
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&h=1080&fit=crop',
-        caption: 'Starry Night',
-      },
-    ])
+    const photos = computed(() => store.pictures)
 
     const updateTime = () => {
       const now = new Date()
@@ -233,16 +211,15 @@ export default defineComponent({
 }
 
 .widget-calendar,
+.widget-weather,
 .widget-news {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
   animation: slideIn 0.6s ease forwards;
 }
 
 .widget-calendar {
   animation-delay: 0.2s;
   opacity: 0;
+  flex: 1;
 }
 
 .widget-news {
