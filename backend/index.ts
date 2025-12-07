@@ -6,6 +6,7 @@ const client = new S3Client({
   bucket: "bran-bucket",
   endpoint: process.env.MINIO_ENDPOINT,
 });
+const apiKey = process.env.WEATHER_API_KEY;
 
 function postProcessResponse(response: Response) {
   response.headers.set("Access-Control-Allow-Origin", "*");
@@ -23,9 +24,8 @@ serve({
     }
 
     if (path === "/weather" && method === "GET") {
-      const apiKey = process.env.WEATHER_API_KEY;
       const response = await fetch(
-        `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=20854`
+        `http://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=20854&days=4`
       );
 
       const data = await response.json();

@@ -6,17 +6,30 @@ export const useCounterStore = defineStore('counter', {
     _pictures: [],
     _lastKey: null,
     _weather: null,
+    _location: null,
+    _forecast: [],
   }),
   getters: {
     pictures: (state) => state._pictures,
     weather: (state) => state._weather,
+    location: (state) => state._location,
+    forecast: (state) => state._forecast,
   },
   actions: {
     async getWeather() {
       api
         .get('/weather')
         .then((response) => {
-          this._weather = response.data
+          let data = response.data
+          this._weather = {
+            ...data.current,
+            chance_of_rain: data.forecast.forecastday[0].day.daily_chance_of_rain,
+            chance_of_snow: data.forecast.forecastday[0].day.daily_chance_of_snow,
+            today_high: data.forecast.forecastday[0].day.maxtemp_f,
+            today_low: data.forecast.forecastday[0].day.mintemp_f,
+          }
+          this._location = data.location
+          this._forecast = data.forecast.forecastday
         })
         .catch((error) => {
           console.error(error)

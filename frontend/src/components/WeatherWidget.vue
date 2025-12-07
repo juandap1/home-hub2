@@ -1,39 +1,57 @@
 <template>
-  <div class="glass-card weather-widget">
-    <div class="weather-row">
-      <div class="weather-main-info">
-        <q-icon :name="weather.icon" class="weather-icon" />
-        <span class="weather-temp">{{ weather.temp }}°F</span>
-      </div>
-      <div class="weather-stats">
-        <div class="stat-item">
-          <q-icon name="air" size="14px" />
-          <span>{{ weather.wind }} mph</span>
-        </div>
-        <div class="stat-item">
-          <q-icon name="water_drop" size="14px" />
-          <span>{{ weather.humidity }}%</span>
-        </div>
-        <div v-if="weather.rainChance > 0" class="stat-item rain">
-          <q-icon name="umbrella" size="14px" />
-          <span>{{ weather.rainChance }}%</span>
-        </div>
-      </div>
-    </div>
-    <div class="weather-details">
-      <span class="weather-condition">{{ weather.condition }}</span>
-      <span class="weather-location">
+  <div class="weather-widget glass-card">
+    <!-- Header Row: Location + Condition -->
+    <div class="weather-header">
+      <div class="header-left">
         <q-icon name="place" size="12px" />
-        {{ weather.location }}
-      </span>
+        <span>{{ locationText }}</span>
+      </div>
+      <span class="header-condition">{{ weather?.condition.text }}</span>
     </div>
+
+    <!-- Main Row: Temp + Icon + Hi/Lo -->
+    <div class="weather-main">
+      <div class="main-left">
+        <q-icon :name="`img:${weather?.condition.icon}`" class="weather-icon" />
+        <span class="main-temp">{{ Math.round(weather?.temp_f) }}°</span>
+      </div>
+      <div class="main-right">
+        <div class="hi-lo-row">
+          <span class="hi">↑ {{ Math.round(weather?.today_high) }}°</span>
+          <span class="lo">↓ {{ Math.round(weather?.today_low) }}°</span>
+        </div>
+        <span class="feels">Feels {{ Math.round(weather?.feelslike_f) }}°</span>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="weather-stats">
+      <div class="stat">
+        <q-icon name="air" size="14px" />
+        <span>{{ weather?.wind_mph }} mph</span>
+      </div>
+      <div class="stat">
+        <q-icon name="water_drop" size="14px" />
+        <span>{{ weather?.humidity }}%</span>
+      </div>
+      <div class="stat rain">
+        <q-icon name="umbrella" size="14px" />
+        <span>{{ weather?.chance_of_rain }}%</span>
+      </div>
+      <div class="stat snow" v-if="weather?.chance_of_snow > 0">
+        <q-icon name="fas fa-snowflake" size="14px" />
+        <span>{{ weather?.chance_of_snow }}%</span>
+      </div>
+    </div>
+
+    <!-- Forecast Row -->
     <div class="weather-forecast">
-      <div v-for="day in forecast" :key="day.day" class="forecast-day">
-        <span class="forecast-label">{{ day.day }}</span>
-        <q-icon :name="day.icon" size="18px" />
+      <div v-for="day in forecast" :key="day.day" class="forecast-item">
+        <span class="forecast-day">{{ day.day.slice(0, 3) }}</span>
+        <q-icon :name="`img:${day.condition.icon}`" class="forecast-icon" />
         <span class="forecast-temps">
-          <span class="hi">{{ day.high }}°</span>
-          <span class="lo">{{ day.low }}°</span>
+          <span class="hi">{{ Math.round(day.maxtemp_f) }}°</span>
+          <span class="lo">{{ Math.round(day.mintemp_f) }}°</span>
         </span>
       </div>
     </div>
@@ -41,36 +59,39 @@
 </template>
 
 <script>
-import { defineComponent, ref } from 'vue'
+import { defineComponent, computed } from 'vue'
+import { useCounterStore } from 'src/stores/store'
 
 export default defineComponent({
   name: 'WeatherWidget',
 
   setup() {
-    const weather = ref({
-      temp: 45,
-      condition: 'Partly Cloudy',
-      location: 'Pittsburgh, PA',
-      icon: 'nights_stay',
-      wind: 12,
-      humidity: 65,
-      rainChance: 20,
+    const store = useCounterStore()
+    const weather = computed(() => store.weather)
+    const location = computed(() => store.location)
+    const forecast = computed(() =>
+      store.forecast?.slice(1).map((x) => ({
+        ...x.day,
+        day: getDayString(x.date),
+      })),
+    )
+    const locationText = computed(() => {
+      if (location.value) {
+        return location.value.name + ', ' + location.value.region
+      }
+      return ''
     })
 
-    const forecast = ref([
-      { day: 'Sat', icon: 'cloud', high: 48, low: 35 },
-      { day: 'Sun', icon: 'wb_sunny', high: 52, low: 38 },
-      { day: 'Mon', icon: 'water_drop', high: 44, low: 32 },
-    ])
-
-    const selectDay = (day) => {
-      console.log('Selected day:', day.name)
+    const getDayString = (day) => {
+      const date = new Date(day)
+      return date.toLocaleDateString('en-US', { weekday: 'long' })
     }
 
     return {
       weather,
       forecast,
-      selectDay,
+      locationText,
+      getDayString,
     }
   },
 })
@@ -80,49 +101,101 @@ export default defineComponent({
 .weather-widget {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px;
+  gap: 10px;
+  padding: 14px 16px;
 }
 
-.weather-row {
+// Header
+.weather-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-condition {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+// Main Section
+.weather-main {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.weather-main-info {
+.main-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .weather-icon {
-  font-size: 32px;
-  color: var(--accent-cyan);
-  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.4));
+  width: 40px;
+  height: 40px;
+  font-size: 40px;
 }
 
-.weather-temp {
-  font-size: 32px;
-  font-weight: 300;
+.main-temp {
+  font-size: 42px;
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -2px;
 }
 
-.weather-stats {
+.main-right {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   align-items: flex-end;
+  gap: 2px;
 }
 
-.stat-item {
+.hi-lo-row {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+
+  .hi {
+    color: #ff9f7a;
+  }
+
+  .lo {
+    color: #7ac8ff;
+  }
+}
+
+.feels {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+// Stats Row
+.weather-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
 
   .q-icon {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.5);
   }
 
   &.rain {
@@ -131,75 +204,57 @@ export default defineComponent({
       color: var(--accent-cyan);
     }
   }
+
+  &.snow {
+    color: #a8d4ff;
+    .q-icon {
+      color: #a8d4ff;
+    }
+  }
 }
 
-.weather-details {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.weather-condition {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.weather-location {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
+// Forecast
 .weather-forecast {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 4px;
 }
 
-.forecast-day {
+.forecast-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  flex: 1;
-  padding: 8px 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  transition: background 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .q-icon {
-    color: var(--accent-yellow);
-  }
+  padding: 6px 4px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.forecast-label {
-  font-size: 11px;
+.forecast-day {
+  font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.forecast-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
 }
 
 .forecast-temps {
   display: flex;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
 
   .hi {
     font-weight: 600;
   }
 
   .lo {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
   }
 }
 </style>
