@@ -8,12 +8,14 @@ export const useCounterStore = defineStore('counter', {
     _weather: null,
     _location: null,
     _forecast: [],
+    _news: [],
   }),
   getters: {
     pictures: (state) => state._pictures,
     weather: (state) => state._weather,
     location: (state) => state._location,
     forecast: (state) => state._forecast,
+    news: (state) => state._news,
   },
   actions: {
     async getWeather() {
@@ -47,6 +49,17 @@ export const useCounterStore = defineStore('counter', {
             (content) => 'http://localhost:6989/object/' + content.key,
           )
           this._lastKey = response.data.contents[response.data.contents.length - 1].key
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    },
+    async getNews() {
+      api
+        .get('/news')
+        .then((response) => {
+          console.log(response)
+          this._news = response.data.articles
         })
         .catch((error) => {
           console.error(error)

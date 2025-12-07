@@ -17,6 +17,7 @@ export default defineComponent({
   mounted() {
     this.store.getWeather()
     this.store.getPictures()
+    this.store.getNews()
   },
 })
 </script>

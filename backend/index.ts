@@ -6,7 +6,8 @@ const client = new S3Client({
   bucket: "bran-bucket",
   endpoint: process.env.MINIO_ENDPOINT,
 });
-const apiKey = process.env.WEATHER_API_KEY;
+const weather_api = process.env.WEATHER_API_KEY;
+const news_api = process.env.NEWS_API_KEY;
 
 function postProcessResponse(response: Response) {
   response.headers.set("Access-Control-Allow-Origin", "*");
@@ -25,11 +26,19 @@ serve({
 
     if (path === "/weather" && method === "GET") {
       const response = await fetch(
-        `http://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=20854&days=4`
+        `http://api.weatherapi.com/v1/forecast.json?key=${weather_api}&q=20854&days=4`
       );
 
       const data = await response.json();
 
+      return postProcessResponse(new Response(JSON.stringify(data)));
+    }
+
+    if (path === "/news" && method === "GET") {
+      const response = await fetch(
+        `https://newsapi.org/v2/top-headlines?country=us&apiKey=${news_api}`
+      );
+      const data = await response.json();
       return postProcessResponse(new Response(JSON.stringify(data)));
     }
 
@@ -51,6 +60,25 @@ serve({
           status: 200,
         })
       );
+    }
+
+    if (path === "/logo" && method === "GET") {
+      const company = new URL(req.url).searchParams.get("company");
+      const domain = new URL(req.url).searchParams.get("domain");
+
+      const s3Logo = client.file(`logos/${company}.png`);
+      let s3Exists = await s3Logo.exists();
+      if (s3Exists) return postProcessResponse(new Response(s3Logo));
+
+      const response = await fetch(
+        `https://img.logo.dev/${domain}?token=${process.env.LOGO_API_KEY}`
+      );
+      // const contentType = response.headers.get("Content-Type");
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      await client.write(`logos/${company}.png`, buffer);
+      return postProcessResponse(new Response(buffer));
     }
 
     if (path === "/list-objects" && method === "GET") {
