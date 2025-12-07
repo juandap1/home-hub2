@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  radicale:
+    image: tomsquest/docker-radicale:latest
+    container_name: radicale
+    restart: unless-stopped
+    ports:
+      - "5232:5232"
+    volumes:
+      - radicale_data:/data
+      - ./config/radicale/config:/config/config:ro
+      - ./config/radicale/users:/config/users:ro
+  server:
+    build: ./backend
+    container_name: bun_backend
+    ports:
+      - "6989:6989"
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      WEATHER_API_KEY: ${WEATHER_API_KEY}
+      NEWS_API_KEY: ${NEWS_API_KEY}
+      LOGO_API_KEY: ${LOGO_API_KEY}
+    volumes:
+      - ./backend:/app
+    tty: true
+    stdin_open: true
+
+volumes:
+  radicale_data:
