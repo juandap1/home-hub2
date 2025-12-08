@@ -15,6 +15,7 @@
         class="week-day"
         :class="{
           today: day.isToday,
+          selected: day.fullDate.getTime() == selectedDate.getTime(),
           'has-event': day.hasEvent,
         }"
         @click="selectDate(day)"
@@ -31,15 +32,17 @@
       </div>
 
       <div class="events-list">
-        <div v-if="upcomingEvents.length === 0" class="no-events">No upcoming events</div>
+        <div v-if="upcomingEvents.length === 0" class="no-events">No Events</div>
         <div
           v-for="event in upcomingEvents"
           :key="event.id"
           class="event-item"
           :style="{ '--event-color': event.color }"
-          @click="viewEvent(event)"
         >
-          <div class="event-time">{{ event.time }}</div>
+          <div class="event-time">
+            <div>{{ event.time }}</div>
+            <div>{{ event.end }}</div>
+          </div>
           <div class="event-details">
             <div class="event-title">{{ event.title }}</div>
             <div v-if="event.location" class="event-meta">{{ event.location }}</div>
@@ -51,7 +54,7 @@
 </template>
 
 <script>
-import { defineComponent, computed } from 'vue'
+import { defineComponent, computed, ref } from 'vue'
 import { useCounterStore } from 'src/stores/store'
 
 export default defineComponent({
@@ -70,6 +73,9 @@ export default defineComponent({
         year: 'numeric',
       })
     })
+    const now = new Date()
+    const selectedDate = ref(new Date(now.getFullYear(), now.getMonth(), now.getDate()))
+    console.log(selectedDate.value)
 
     // Get events from store
     const storeEvents = computed(() => store.events || [])
@@ -96,8 +102,9 @@ export default defineComponent({
       startOfWeek.setDate(today.getDate() - today.getDay())
 
       for (let i = 0; i < 7; i++) {
-        const date = new Date(startOfWeek)
+        let date = new Date(startOfWeek)
         date.setDate(startOfWeek.getDate() + i)
+        date = new Date(date.getFullYear(), date.getMonth(), date.getDate())
 
         const isToday =
           date.getDate() === today.getDate() &&
@@ -119,13 +126,11 @@ export default defineComponent({
 
     // Transform store events into display format
     const upcomingEvents = computed(() => {
-      const now = new Date()
-
       return storeEvents.value
         .filter((event) => {
-          if (!event.start) return false
-          const eventDate = new Date(event.start)
-          return eventDate >= now
+          let nextDate = new Date(new Date().setDate(selectedDate.value.getDate() + 1))
+          nextDate = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate())
+          return new Date(event.start) >= selectedDate.value && new Date(event.end) <= nextDate
         })
         .slice(0, 5) // Show max 5 upcoming events
         .map((event, index) => {
@@ -136,10 +141,17 @@ export default defineComponent({
             hour12: true,
           })
 
+          const endStr = new Date(event.end).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          })
+
           return {
             id: event.id || index,
-            title: event.title || 'Untitled Event',
+            title: event.summary || 'Untitled Event',
             time: timeStr,
+            end: endStr,
             location: event.location || '',
             color: eventColors[index % eventColors.length],
           }
@@ -147,11 +159,7 @@ export default defineComponent({
     })
 
     const selectDate = (day) => {
-      console.log('Selected:', day.fullDate)
-    }
-
-    const viewEvent = (event) => {
-      console.log('View event:', event.title)
+      selectedDate.value = day.fullDate
     }
 
     return {
@@ -159,7 +167,7 @@ export default defineComponent({
       weekDays,
       upcomingEvents,
       selectDate,
-      viewEvent,
+      selectedDate,
     }
   },
 })
@@ -220,7 +228,7 @@ export default defineComponent({
   transition: all 0.2s ease;
   gap: 4px;
 
-  &:hover:not(.today) {
+  &:hover:not(.today):not(.selected) {
     background: rgba(255, 255, 255, 0.1);
   }
 
@@ -228,8 +236,17 @@ export default defineComponent({
     transform: scale(0.95);
   }
 
-  &.today {
+  &.selected {
     background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    box-shadow: 0 0 16px rgba(96, 165, 250, 0.4);
+
+    .day-number {
+      font-weight: 700;
+    }
+  }
+
+  &.today:not(.selected) {
+    background: rgba(0, 153, 255, 0.4);
     box-shadow: 0 0 16px rgba(96, 165, 250, 0.4);
 
     .day-number {
@@ -279,12 +296,11 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   gap: 6px;
-  overflow-y: auto;
 }
 
 .no-events {
-  font-size: 12px;
-  color: var(--text-muted);
+  font-size: 18px;
+  color: white;
   text-align: center;
   padding: 20px;
   opacity: 0.6;
@@ -297,17 +313,6 @@ export default defineComponent({
   background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
   border-left: 3px solid var(--event-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(4px);
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
 }
 
 .event-time {

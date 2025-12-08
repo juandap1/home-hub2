@@ -72,7 +72,7 @@ export const useCounterStore = defineStore('counter', {
         .get('/calendar')
         .then((response) => {
           console.log('Calendar events:', response.data)
-          this._events = response.data.events || []
+          this._events = response.data || []
         })
         .catch((error) => {
           console.error('Calendar error:', error)
