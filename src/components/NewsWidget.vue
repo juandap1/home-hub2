@@ -110,6 +110,8 @@ export default defineComponent({
 
   .q-icon {
     font-size: 18px;
+    border-radius: 3px;
+    overflow: hidden;
   }
 }
 
