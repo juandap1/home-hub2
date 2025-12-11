@@ -9,8 +9,9 @@ const client = new S3Client({
   bucket: "bran-bucket",
   endpoint: process.env.MINIO_ENDPOINT,
 });
+
 const caldavClient = await createDAVClient({
-  serverUrl: process.env.CALDAV_URL || "http://radicale:5232",
+  serverUrl: process.env.CALDAV_URL || "http://173.73.175.116:5232",
   credentials: {
     username: process.env.CALDAV_USER || "admin",
     password: process.env.CALDAV_PASS || "",
@@ -18,8 +19,8 @@ const caldavClient = await createDAVClient({
   authMethod: "Basic",
   defaultAccountType: "caldav",
 });
+
 const calendars = await caldavClient.fetchCalendars();
-const myCalendar = calendars[0];
 
 const weather_api = process.env.WEATHER_API_KEY;
 const news_api = process.env.NEWS_API_KEY;
@@ -86,24 +87,31 @@ serve({
     }
 
     if (path === "/calendar" && method === "GET") {
-      if (myCalendar == null)
-        return postProcessResponse(new Response("No calendar found"));
       const now = new Date();
+      const start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
       const oneYearFromNow = new Date(
         now.getTime() + 365 * 24 * 60 * 60 * 1000
       );
-      const calendarObjects = await caldavClient.fetchCalendarObjects({
-        calendar: myCalendar,
-        timeRange: {
-          start: now.toISOString(),
-          end: oneYearFromNow.toISOString(),
-        },
-      });
-      const parsedEvents = calendarObjects.map((event) => {
-        return Object.values(ical.parseICS(event.data)).find(
-          (value: any) => value.type === "VEVENT"
-        );
-      });
+      let parsedEvents = [];
+      for (const calendar of calendars) {
+        const calendarObjects = await caldavClient.fetchCalendarObjects({
+          calendar: calendar,
+          timeRange: {
+            start: start.toISOString(),
+            end: oneYearFromNow.toISOString(),
+          },
+        });
+        calendarObjects.forEach((event) => {
+          let parsed = Object.values(ical.parseICS(event.data)).find(
+            (value: any) => value.type === "VEVENT"
+          );
+          parsedEvents.push({
+            ...parsed,
+            calendar: calendar.displayName,
+            calendarColor: calendar.calendarColor,
+          });
+        });
+      }
       return postProcessResponse(new Response(JSON.stringify(parsedEvents)));
     }
 

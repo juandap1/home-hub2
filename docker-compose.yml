@@ -1,16 +1,6 @@
 version: "3.8"
 
 services:
-  radicale:
-    image: tomsquest/docker-radicale:latest
-    container_name: radicale
-    restart: unless-stopped
-    ports:
-      - "5232:5232"
-    volumes:
-      - radicale_data:/data
-      - ./config/radicale/config:/config/config:ro
-      - ./config/radicale/users:/config/users:ro
   server:
     build: ./backend
     container_name: bun_backend
@@ -23,13 +13,10 @@ services:
       WEATHER_API_KEY: ${WEATHER_API_KEY}
       NEWS_API_KEY: ${NEWS_API_KEY}
       LOGO_API_KEY: ${LOGO_API_KEY}
-      CALDAV_URL: http://radicale:5232
+      CALDAV_URL: http://173.73.175.116:5232
       CALDAV_USER: ${CALDAV_USER}
       CALDAV_PASS: ${CALDAV_PASS}
     volumes:
       - ./backend:/app
     tty: true
     stdin_open: true
-
-volumes:
-  radicale_data:
