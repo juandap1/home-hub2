@@ -48,7 +48,7 @@ export const useCounterStore = defineStore('counter', {
         })
         .then((response) => {
           this._pictures = response.data.contents.map(
-            (content) => 'http://localhost:6989/object/' + content.key,
+            (content) => 'https://api.mbranning.org/object/' + content.key,
           )
           this._lastKey = response.data.contents[response.data.contents.length - 1].key
         })

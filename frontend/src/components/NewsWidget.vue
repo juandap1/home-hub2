@@ -3,7 +3,7 @@
     <div class="news-title">{{ cleanTitle(currentArticle?.title) }}</div>
     <div class="news-preview">{{ cleanPreview(currentArticle?.content) }}</div>
     <div class="news-source">
-      <q-icon :name="articleLogo" />
+      <q-icon v-if="currentArticle?.source.name" :name="articleLogo" />
       <span>{{ currentArticle?.source.name }}</span>
       <span class="news-time">{{ formatTimeAgo(currentArticle?.publishedAt) }}</span>
     </div>
@@ -22,7 +22,7 @@ export default defineComponent({
     const articles = computed(() => store.news)
     const currentArticle = computed(() => articles.value[0])
     const articleLogo = computed(() => {
-      return `img:http://localhost:6989/logo?company=${currentArticle.value?.source.name}&domain=${getDomainFromUrl(currentArticle.value?.url)}`
+      return `img:https://api.mbranning.org/logo?company=${currentArticle.value?.source.name}&domain=${getDomainFromUrl(currentArticle.value?.url)}`
     })
 
     const getDomainFromUrl = (url) => {
