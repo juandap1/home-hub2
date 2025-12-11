@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  frontend:
+  home_hub:
     build: .
-    container_name: frontend
+    container_name: home_hub
     ports:
       - '9000:9000'
