@@ -45,7 +45,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, onMounted, onUnmounted, computed } from 'vue'
+import { defineComponent, ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import CalendarWidget from 'src/components/CalendarWidget.vue'
 import NewsWidget from 'src/components/NewsWidget.vue'
 import WeatherWidget from 'src/components/WeatherWidget.vue'
@@ -95,6 +95,28 @@ export default defineComponent({
     const goToPhoto = (index) => {
       currentPhotoIndex.value = index
     }
+
+    const preloadImage = (url) => {
+      const img = new Image()
+      img.src = url
+    }
+
+    // Preload next few photos to avoid flickering
+    watch(
+      [currentPhotoIndex, photos],
+      () => {
+        if (!photos.value || photos.value.length === 0) return
+
+        // Preload next 3 photos
+        for (let i = 1; i <= 3; i++) {
+          const nextIndex = (currentPhotoIndex.value + i) % photos.value.length
+          if (photos.value[nextIndex]) {
+            preloadImage(photos.value[nextIndex])
+          }
+        }
+      },
+      { immediate: true },
+    )
 
     onMounted(() => {
       updateTime()

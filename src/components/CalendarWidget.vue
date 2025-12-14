@@ -82,14 +82,17 @@ export default defineComponent({
 
     // Check if a date has events
     const dateHasEvent = (date) => {
+      const startOfDay = new Date(date)
+      startOfDay.setHours(0, 0, 0, 0)
+
+      const endOfDay = new Date(startOfDay)
+      endOfDay.setDate(endOfDay.getDate() + 1)
+
       return storeEvents.value.some((event) => {
         if (!event.start) return false
-        const eventDate = new Date(event.start)
-        return (
-          eventDate.getDate() === date.getDate() &&
-          eventDate.getMonth() === date.getMonth() &&
-          eventDate.getFullYear() === date.getFullYear()
-        )
+        const eventStart = new Date(event.start)
+        const eventEnd = event.end ? new Date(event.end) : new Date(eventStart.getTime() + 1000)
+        return eventStart < endOfDay && eventEnd > startOfDay
       })
     }
 
@@ -126,11 +129,18 @@ export default defineComponent({
 
     // Transform store events into display format
     const upcomingEvents = computed(() => {
+      const startOfDay = new Date(selectedDate.value)
+      startOfDay.setHours(0, 0, 0, 0)
+
+      const endOfDay = new Date(startOfDay)
+      endOfDay.setDate(endOfDay.getDate() + 1)
+
       return storeEvents.value
         .filter((event) => {
-          let nextDate = new Date(new Date().setDate(selectedDate.value.getDate() + 1))
-          nextDate = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate())
-          return new Date(event.start) >= selectedDate.value && new Date(event.end) <= nextDate
+          if (!event.start) return false
+          const eventStart = new Date(event.start)
+          const eventEnd = event.end ? new Date(event.end) : new Date(eventStart.getTime() + 1000)
+          return eventStart < endOfDay && eventEnd > startOfDay
         })
         .slice(0, 5) // Show max 5 upcoming events
         .map((event, index) => {
