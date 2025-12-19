@@ -45,7 +45,13 @@
           </div>
           <div class="event-details">
             <div class="event-title">{{ event.title }}</div>
-            <div v-if="event.location" class="event-meta">{{ event.location }}</div>
+            <div v-if="event.location || event.calendarName" class="event-meta">
+              <span v-if="event.calendarName" style="font-weight: 600">{{
+                event.calendarName
+              }}</span>
+              <span v-if="event.calendarName && event.location"> • </span>
+              <span v-if="event.location">{{ event.location }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -163,7 +169,8 @@ export default defineComponent({
             time: timeStr,
             end: endStr,
             location: event.location || '',
-            color: eventColors[index % eventColors.length],
+            calendarName: event.calendar || '',
+            color: event.calendarColor || eventColors[index % eventColors.length],
           }
         })
     })
