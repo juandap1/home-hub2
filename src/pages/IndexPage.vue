@@ -3,7 +3,13 @@
     <!-- Background Photo Slideshow -->
     <div class="photo-background">
       <transition name="fade">
-        <img :key="currentPhotoIndex" :src="photos[currentPhotoIndex]" class="background-photo" />
+        <div :key="currentPhotoIndex" class="photo-wrapper">
+          <div
+            class="photo-blur-bg"
+            :style="{ backgroundImage: `url(${photos[currentPhotoIndex]})` }"
+          />
+          <img :src="photos[currentPhotoIndex]" class="background-photo" />
+        </div>
       </transition>
       <div class="photo-overlay" />
     </div>
@@ -190,6 +196,23 @@ export default defineComponent({
   position: absolute;
   inset: 0;
   z-index: 0;
+  background-color: #000;
+}
+
+.photo-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.photo-blur-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(40px) brightness(0.6);
+  transform: scale(1.1);
 }
 
 .background-photo {
@@ -197,8 +220,9 @@ export default defineComponent({
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: opacity 1s ease;
+  object-fit: contain;
+  z-index: 1;
+  filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.5));
 }
 
 .photo-overlay {
