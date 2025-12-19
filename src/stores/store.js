@@ -50,7 +50,9 @@ export const useCounterStore = defineStore('counter', {
           this._pictures = response.data.contents.map(
             (content) => 'https://api.mbranning.org/object/' + content.key,
           )
-          this._lastKey = response.data.contents[response.data.contents.length - 1].key
+          if (response.data.contents.length > 0) {
+            this._lastKey = response.data.contents[response.data.contents.length - 1].key
+          }
         })
         .catch((error) => {
           console.error(error)
