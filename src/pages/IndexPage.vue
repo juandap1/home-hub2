@@ -127,6 +127,7 @@ export default defineComponent({
           // Wait for the next image to fully load before switching
           await preloadImage(photos.value[nextIndex])
         } catch (error) {
+          console.error(error)
           console.error('Failed to load next image:', photos.value[nextIndex])
         }
 
