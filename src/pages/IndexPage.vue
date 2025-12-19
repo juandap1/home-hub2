@@ -2,7 +2,7 @@
   <q-page class="home-hub">
     <!-- Background Photo Slideshow -->
     <div class="photo-background">
-      <transition name="fade" mode="out-in">
+      <transition name="fade">
         <img :key="currentPhotoIndex" :src="photos[currentPhotoIndex]" class="background-photo" />
       </transition>
       <div class="photo-overlay" />
@@ -157,6 +157,8 @@ export default defineComponent({
 }
 
 .background-photo {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
