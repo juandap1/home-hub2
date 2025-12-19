@@ -65,8 +65,10 @@ export default defineComponent({
     const currentDate = ref('')
     const currentPhotoIndex = ref(0)
     let timeInterval = null
-    let photoInterval = null
+    let photoTimeout = null
     const store = useCounterStore()
+    // Keep references to images to prevent garbage collection
+    const imageCache = new Set()
 
     const photos = computed(() => store.pictures)
 
@@ -88,20 +90,52 @@ export default defineComponent({
       })
     }
 
-    const nextPhoto = () => {
-      currentPhotoIndex.value = (currentPhotoIndex.value + 1) % photos.value.length
-    }
-
     const goToPhoto = (index) => {
       currentPhotoIndex.value = index
+      // Reset timer when manually changing
+      startSlideshow()
     }
 
     const preloadImage = (url) => {
-      const img = new Image()
-      img.src = url
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.src = url
+        img.onload = () => resolve(img)
+        img.onerror = reject
+        // Add to cache to prevent GC
+        imageCache.add(img)
+        // Clean up old cache entries if it gets too big (optional, but good practice)
+        if (imageCache.size > 20) {
+          const iterator = imageCache.values()
+          imageCache.delete(iterator.next().value)
+        }
+      })
     }
 
-    // Preload next few photos to avoid flickering
+    const startSlideshow = () => {
+      if (photoTimeout) clearTimeout(photoTimeout)
+
+      photoTimeout = setTimeout(async () => {
+        if (!photos.value || photos.value.length === 0) {
+          startSlideshow()
+          return
+        }
+
+        const nextIndex = (currentPhotoIndex.value + 1) % photos.value.length
+
+        try {
+          // Wait for the next image to fully load before switching
+          await preloadImage(photos.value[nextIndex])
+        } catch (error) {
+          console.error('Failed to load next image:', photos.value[nextIndex])
+        }
+
+        currentPhotoIndex.value = nextIndex
+        startSlideshow()
+      }, 15000) // Change photo every 15 seconds
+    }
+
+    // Preload next few photos in advance (optimization)
     watch(
       [currentPhotoIndex, photos],
       () => {
@@ -111,7 +145,7 @@ export default defineComponent({
         for (let i = 1; i <= 3; i++) {
           const nextIndex = (currentPhotoIndex.value + i) % photos.value.length
           if (photos.value[nextIndex]) {
-            preloadImage(photos.value[nextIndex])
+            preloadImage(photos.value[nextIndex]).catch(() => {})
           }
         }
       },
@@ -121,12 +155,13 @@ export default defineComponent({
     onMounted(() => {
       updateTime()
       timeInterval = setInterval(updateTime, 1000)
-      photoInterval = setInterval(nextPhoto, 15000) // Change photo every 15 seconds
+      startSlideshow()
     })
 
     onUnmounted(() => {
       if (timeInterval) clearInterval(timeInterval)
-      if (photoInterval) clearInterval(photoInterval)
+      if (photoTimeout) clearTimeout(photoTimeout)
+      imageCache.clear()
     })
 
     return {
