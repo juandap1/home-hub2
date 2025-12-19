@@ -19,21 +19,20 @@ export default defineComponent({
       calendarInterval: null,
       newsInterval: null,
       weatherInterval: null,
+      picturesInterval: null,
     }
   },
   mounted() {
     this.store.getPictures()
-    const refreshData = () => {
-      this.store.getWeather()
-    }
-
-    // Initial fetch
-    refreshData()
+    this.store.getCalendar()
+    this.store.getNews()
+    this.store.getWeather()
 
     // Refresh every minute
     this.calendarInterval = setInterval(this.store.getCalendar, 60 * 1000)
     this.newsInterval = setInterval(this.store.getNews, 30 * 60 * 1000) // Every 30 minutes
-    this.weatherInterval = setInterval(refreshData, 15 * 60 * 1000) // Every 15 minutes
+    this.weatherInterval = setInterval(this.store.getWeather, 15 * 60 * 1000) // Every 15 minutes
+    this.picturesInterval = setInterval(this.store.getPictures, 60 * 60 * 1000) // Every hour
   },
   unmounted() {
     if (this.calendarInterval) {
@@ -44,6 +43,9 @@ export default defineComponent({
     }
     if (this.weatherInterval) {
       clearInterval(this.weatherInterval)
+    }
+    if (this.picturesInterval) {
+      clearInterval(this.picturesInterval)
     }
   },
 })
