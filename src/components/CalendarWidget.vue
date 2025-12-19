@@ -40,8 +40,11 @@
           :style="{ '--event-color': event.color }"
         >
           <div class="event-time">
-            <div>{{ event.time }}</div>
-            <div>{{ event.end }}</div>
+            <template v-if="!event.isAllDay">
+              <div>{{ event.time }}</div>
+              <div>{{ event.end }}</div>
+            </template>
+            <div v-else>All Day</div>
           </div>
           <div class="event-details">
             <div class="event-title">{{ event.title }}</div>
@@ -171,6 +174,7 @@ export default defineComponent({
             location: event.location || '',
             calendarName: event.calendar || '',
             color: event.calendarColor || eventColors[index % eventColors.length],
+            isAllDay: event.isAllDay || false,
           }
         })
     })
